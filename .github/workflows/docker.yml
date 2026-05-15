@@ -1,0 +1,65 @@
+name: Docker
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'BillingApplication/**'
+      - 'BillingSpringBoot/**'
+      - 'docker-compose.yml'
+      - '.github/workflows/docker.yml'
+  pull_request:
+    branches: [main, master]
+    paths:
+      - 'BillingApplication/**'
+      - 'BillingSpringBoot/**'
+      - 'docker-compose.yml'
+      - '.github/workflows/docker.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: docker-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-api-image:
+    name: Build API image
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build API image
+        uses: docker/build-push-action@v6
+        with:
+          context: BillingSpringBoot
+          file: BillingSpringBoot/Dockerfile
+          push: false
+          tags: billing-api:ci
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,mode=max,scope=api
+
+  build-web-image:
+    name: Build web image
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build web image
+        uses: docker/build-push-action@v6
+        with:
+          context: BillingApplication
+          file: BillingApplication/Dockerfile
+          push: false
+          tags: billing-web:ci
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,mode=max,scope=web
