@@ -8,22 +8,24 @@ COPY pom.xml .
 RUN mvn -B -DskipTests dependency:go-offline
 
 COPY src src
-ARG JAR_FILE=target/demo-0.0.1-SNAPSHOT.jar
 RUN mvn -B -DskipTests package \
-    && java -Djarmode=tools -jar ${JAR_FILE} extract --layers --destination target/extracted
+    && cp target/demo-0.0.1-SNAPSHOT.jar application.jar \
+    && java -Djarmode=tools -jar application.jar extract --layers --destination target/extracted
 
-# --- Runtime: JRE only + layered classpath (smaller than shipping the full fat JAR) ---
+# --- Runtime: merge layers, then launch with -jar (not JarLauncher on classpath) ---
 FROM eclipse-temurin:17-jre-alpine AS runtime
 WORKDIR /app
 
 RUN addgroup -S spring && adduser -S spring -G spring
-USER spring:spring
 
-COPY --from=build --chown=spring:spring /build/target/extracted/dependencies/ ./
-COPY --from=build --chown=spring:spring /build/target/extracted/spring-boot-loader/ ./
-COPY --from=build --chown=spring:spring /build/target/extracted/snapshot-dependencies/ ./
-COPY --from=build --chown=spring:spring /build/target/extracted/application/ ./
+COPY --from=build /build/target/extracted/dependencies/ ./
+COPY --from=build /build/target/extracted/spring-boot-loader/ ./
+COPY --from=build /build/target/extracted/snapshot-dependencies/ ./
+COPY --from=build /build/target/extracted/application/ ./
+
+RUN chown -R spring:spring /app
+USER spring:spring
 
 ENV JAVA_TOOL_OPTIONS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
 EXPOSE 8080
-ENTRYPOINT ["java", "org.springframework.boot.loader.launch.JarLauncher"]
+ENTRYPOINT ["java", "-jar", "application.jar"]
