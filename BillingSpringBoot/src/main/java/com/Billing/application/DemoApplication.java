@@ -1,5 +1,6 @@
 package com.Billing.application;
 
+import com.Billing.application.config.RenderDatabaseEnvironmentPostProcessor;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
@@ -7,7 +8,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class DemoApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(DemoApplication.class, args);
+		SpringApplication application = new SpringApplication(DemoApplication.class);
+		application.addEnvironmentPostProcessors(new RenderDatabaseEnvironmentPostProcessor());
+		application.run(args);
 	}
 
 }

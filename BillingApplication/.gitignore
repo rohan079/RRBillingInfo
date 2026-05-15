@@ -42,3 +42,11 @@ __screenshots__/
 # System files
 .DS_Store
 Thumbs.db
+
+# Secrets — fill .env locally or import into Vercel (never commit real values)
+.env
+.env.local
+.env.*.local
+
+# Generated at build from .env
+src/environments/environment.prod.ts

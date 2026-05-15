@@ -12,8 +12,8 @@ import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
 
 /**
- * When deployed on Render with a linked Postgres database, {@code DATABASE_URL} is set
- * automatically. Map it to Spring datasource properties if {@code SPRING_DATASOURCE_URL} is not set.
+ * Maps Render Postgres {@code DATABASE_URL} (postgresql://…) to Spring JDBC settings.
+ * Registered from {@link com.Billing.application.DemoApplication#main} and via META-INF.
  */
 public class RenderDatabaseEnvironmentPostProcessor implements EnvironmentPostProcessor {
 
@@ -25,28 +25,53 @@ public class RenderDatabaseEnvironmentPostProcessor implements EnvironmentPostPr
 			return;
 		}
 
-		String databaseUrl = environment.getProperty("DATABASE_URL");
+		String databaseUrl = firstNonBlank(
+				environment.getProperty("DATABASE_URL"),
+				environment.getProperty("DATABASE_INTERNAL_URL"),
+				environment.getProperty("POSTGRES_URL"));
+
 		if (!hasText(databaseUrl)) {
+			warnIfRenderWithoutDatabase(environment);
 			return;
 		}
 
 		Map<String, Object> properties = new HashMap<>();
-		applyPostgresUrl(databaseUrl, properties);
+		if (!applyPostgresUrl(databaseUrl, properties)) {
+			System.err.println("[renderDatabase] Could not parse DATABASE_URL; set SPRING_DATASOURCE_URL manually.");
+			return;
+		}
+
 		environment.getPropertySources().addFirst(new MapPropertySource(RENDER_SOURCE, properties));
+		System.out.println("[renderDatabase] Using JDBC URL host from DATABASE_URL (Render Postgres)");
 	}
 
-	private static void applyPostgresUrl(String databaseUrl, Map<String, Object> properties) {
+	private static void warnIfRenderWithoutDatabase(ConfigurableEnvironment environment) {
+		if (!hasText(environment.getProperty("RENDER"))) {
+			return;
+		}
+		System.err.println(
+				"[renderDatabase] RENDER is set but DATABASE_URL is missing. "
+						+ "In Render: Web Service → Environment → Link database, "
+						+ "or set SPRING_DATASOURCE_URL / SPRING_DATASOURCE_USERNAME / SPRING_DATASOURCE_PASSWORD.");
+	}
+
+	private static boolean applyPostgresUrl(String databaseUrl, Map<String, Object> properties) {
 		String normalized = databaseUrl.startsWith("postgres://")
 				? "postgresql://" + databaseUrl.substring("postgres://".length())
 				: databaseUrl;
 
 		if (!normalized.startsWith("postgresql://")) {
-			return;
+			return false;
 		}
 
-		URI uri = URI.create(normalized);
+		// java.net.URI does not parse host for the postgresql scheme; use http for parsing.
+		URI uri = URI.create(normalized.replaceFirst("^postgresql://", "http://"));
 		String userInfo = uri.getUserInfo();
 		String host = uri.getHost();
+		if (!hasText(host)) {
+			return false;
+		}
+
 		int port = uri.getPort() > 0 ? uri.getPort() : 5432;
 		String database = uri.getPath() != null && uri.getPath().length() > 1
 				? uri.getPath().substring(1)
@@ -54,14 +79,31 @@ public class RenderDatabaseEnvironmentPostProcessor implements EnvironmentPostPr
 
 		String jdbcUrl = "jdbc:postgresql://" + host + ":" + port + "/" + database + "?sslmode=require";
 		properties.put("spring.datasource.url", jdbcUrl);
+		properties.put("SPRING_DATASOURCE_URL", jdbcUrl);
 
 		if (userInfo != null && !userInfo.isBlank()) {
 			String[] parts = userInfo.split(":", 2);
-			properties.put("spring.datasource.username", decode(parts[0]));
+			String username = decode(parts[0]);
+			properties.put("spring.datasource.username", username);
+			properties.put("SPRING_DATASOURCE_USERNAME", username);
 			if (parts.length > 1) {
-				properties.put("spring.datasource.password", decode(parts[1]));
+				String password = decode(parts[1]);
+				properties.put("spring.datasource.password", password);
+				properties.put("SPRING_DATASOURCE_PASSWORD", password);
 			}
 		}
+
+		properties.put("spring.jpa.database-platform", "org.hibernate.dialect.PostgreSQLDialect");
+		return true;
+	}
+
+	private static String firstNonBlank(String... values) {
+		for (String value : values) {
+			if (hasText(value)) {
+				return value;
+			}
+		}
+		return null;
 	}
 
 	private static String decode(String value) {
