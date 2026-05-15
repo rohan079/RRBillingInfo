@@ -16,14 +16,14 @@ services:
     envVars:
       - key: JAVA_TOOL_OPTIONS
         value: -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0
-      # Option A — link Postgres in dashboard (auto sets DATABASE_URL); app converts to JDBC.
-      # Option B — set these manually (same names as BillingVarGroup):
-      # - key: SPRING_DATASOURCE_URL
-      #   value: jdbc:postgresql://HOST:5432/rrbillingdb?sslmode=require
-      # - key: SPRING_DATASOURCE_USERNAME
-      #   sync: false
-      # - key: SPRING_DATASOURCE_PASSWORD
-      #   sync: false
+      # REQUIRED — in Render dashboard: Environment → "Add environment group" / Link Postgres
+      # so DATABASE_URL is present, OR set all three SPRING_DATASOURCE_* variables below.
+      - key: SPRING_DATASOURCE_URL
+        sync: false
+      - key: SPRING_DATASOURCE_USERNAME
+        sync: false
+      - key: SPRING_DATASOURCE_PASSWORD
+        sync: false
       # When Angular is on Render or elsewhere, add its URL:
       # - key: APP_CORS_ALLOWED_ORIGINS
       #   value: https://your-frontend.onrender.com
