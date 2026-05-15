@@ -13,3 +13,6 @@ BillingSpringBoot/*.iml
 
 # Local DB credentials (copy from application.properties.example)
 BillingSpringBoot/src/main/resources/application-local.properties
+
+# Azure DevOps BillingVarGroup / local Docker secrets
+docker/billing-var-group.env

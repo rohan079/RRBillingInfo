@@ -1,0 +1,35 @@
+# Production-style compose: external Postgres (Render) using BillingVarGroup variable names.
+# Usage:
+#   cp docker/billing-var-group.env.example docker/billing-var-group.env
+#   # fill SPRING_DATASOURCE_* with Render values
+#   docker compose -f docker-compose.billing.yml up --build api web
+#
+# Or export vars from Azure DevOps BillingVarGroup before compose.
+
+services:
+  api:
+    build:
+      context: ./BillingSpringBoot
+      dockerfile: Dockerfile
+    labels:
+      com.billing.azure.var-group: BillingVarGroup
+    env_file:
+      - docker/billing-var-group.env
+    environment:
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - '8080:8080'
+
+  web:
+    build:
+      context: ./BillingApplication
+      dockerfile: Dockerfile
+    labels:
+      com.billing.azure.var-group: BillingVarGroup
+    depends_on:
+      - api
+    ports:
+      - '4200:80'

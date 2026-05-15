@@ -1,14 +1,19 @@
+# BillingVarGroup — map these names in Azure DevOps / Render / docker/billing-var-group.env
+#   SPRING_DATASOURCE_URL, SPRING_DATASOURCE_USERNAME, SPRING_DATASOURCE_PASSWORD
+#   POSTGRES_PASSWORD (local postgres + password fallback)
+# See docker/billing-var-group.env.example
+
 services:
   postgres:
     image: postgres:17-alpine
     environment:
-      POSTGRES_DB: postgres
-      POSTGRES_USER: postgres
+      POSTGRES_DB: ${POSTGRES_DB:-postgres}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-admin}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-postgres}']
       interval: 5s
       timeout: 5s
       retries: 10
@@ -17,10 +22,15 @@ services:
     build:
       context: ./BillingSpringBoot
       dockerfile: Dockerfile
+    labels:
+      com.billing.azure.var-group: BillingVarGroup
+    env_file:
+      - path: docker/billing-var-group.env
+        required: false
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/postgres?connectTimeout=10&sslmode=prefer
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-admin}
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://postgres:5432/postgres?connectTimeout=10&sslmode=prefer}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-${POSTGRES_PASSWORD:-admin}}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-admin}
     depends_on:
       postgres:
@@ -32,6 +42,8 @@ services:
     build:
       context: ./BillingApplication
       dockerfile: Dockerfile
+    labels:
+      com.billing.azure.var-group: BillingVarGroup
     depends_on:
       - api
     ports:

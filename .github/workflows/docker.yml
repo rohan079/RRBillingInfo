@@ -1,3 +1,5 @@
+# GitHub Actions cannot read Azure DevOps BillingVarGroup; use GitHub Secrets with the
+# same variable names (SPRING_DATASOURCE_*) for deploy workflows if needed.
 name: Docker
 
 on:
