@@ -1,0 +1,190 @@
+<div class="invoices-page">
+  <header class="invoices-head">
+    <h1 class="invoices-title">Invoices</h1>
+    <p class="invoices-sub">Grouped by week, then by date. Tap the arrow to show line items.</p>
+  </header>
+
+  @if (store.listLoading()) {
+    <p class="invoices-status">Loading invoices…</p>
+  }
+  @if (store.listLoadError()) {
+    <p class="invoices-status invoices-status--error" role="alert">{{ store.listLoadError() }}</p>
+  }
+
+  @if (grouped().length === 0 && !store.listLoading() && !store.listLoadError()) {
+    <div class="invoices-empty">
+      <p>No invoices yet.</p>
+      <p class="invoices-empty-hint">Finalize a bill on Home and tap <strong>Finish</strong> to save it here.</p>
+    </div>
+  } @else {
+    @for (week of grouped(); track week.weekKey) {
+      <section class="week-block" [attr.aria-labelledby]="'wk-' + week.weekKey">
+        <h2 class="week-title" [id]="'wk-' + week.weekKey">{{ week.weekLabel }}</h2>
+
+        @for (day of week.days; track day.dateKey) {
+          <div class="day-block">
+            <h3 class="day-title">{{ day.dateLabel }}</h3>
+
+            @for (inv of day.invoices; track inv.id) {
+              <article class="invoice-card">
+                <div class="invoice-header-row">
+                  <button
+                    type="button"
+                    class="invoice-expand-btn"
+                    (click)="toggleExpand(inv.id)"
+                    [attr.aria-expanded]="expandedIds().has(inv.id)"
+                    [attr.aria-controls]="panelId(inv.id)"
+                    [title]="expandedIds().has(inv.id) ? 'Hide lines' : 'Show lines'"
+                  >
+                    <svg
+                      class="chevron"
+                      [class.chevron--open]="expandedIds().has(inv.id)"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                    >
+                      <path
+                        fill="currentColor"
+                        d="M8.59 16.59 13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"
+                      />
+                    </svg>
+                  </button>
+
+                  <div class="invoice-header-main">
+                    <div class="invoice-header-line1">
+                      <span class="invoice-id">{{ inv.id }}</span>
+                      <span class="invoice-meta"
+                        >{{ inv.lines.length }}
+                        {{ inv.lines.length === 1 ? 'line' : 'lines' }}</span
+                      >
+                    </div>
+                    <div class="invoice-header-line2">
+                      <time class="invoice-time" [attr.datetime]="inv.createdAt">{{
+                        inv.createdAt | date: 'short' : undefined : 'en-IN'
+                      }}</time>
+                      <span class="invoice-total-inline">{{
+                        inv.total | currency: 'INR' : 'symbol' : '1.0-0'
+                      }}</span>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    class="btn-remove-invoice"
+                    (click)="openDeleteConfirm(inv, $event)"
+                    title="Delete this invoice"
+                  >
+                    Remove
+                  </button>
+                </div>
+
+                @if (expandedIds().has(inv.id)) {
+                  <div class="invoice-panel" [id]="panelId(inv.id)">
+                    <table class="invoice-lines">
+                      <thead>
+                        <tr>
+                          <th scope="col">Item</th>
+                          <th scope="col" class="num">Qty</th>
+                          <th scope="col" class="num">Price</th>
+                          <th scope="col" class="num">Line</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (line of inv.lines; track $index) {
+                          <tr>
+                            <td>
+                              <span class="line-label">{{ line.label }}</span>
+                              <span class="line-barcode">{{ line.barcode }}</span>
+                            </td>
+                            <td class="num">{{ line.qty }}</td>
+                            <td class="num">{{ line.unitPrice | currency: 'INR' : 'symbol' : '1.0-0' }}</td>
+                            <td class="num">{{ line.lineTotal | currency: 'INR' : 'symbol' : '1.0-0' }}</td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+
+                    <div class="invoice-summary">
+                      <div class="sum-row">
+                        <span>Subtotal</span>
+                        <span>{{ inv.subtotal | currency: 'INR' : 'symbol' : '1.0-0' }}</span>
+                      </div>
+                      @if (inv.discountPercent > 0) {
+                        <div class="sum-row discount">
+                          <span>Discount ({{ inv.discountPercent }}%)</span>
+                          <span>−{{ inv.discountAmount | currency: 'INR' : 'symbol' : '1.0-0' }}</span>
+                        </div>
+                      }
+                      <div class="sum-row total">
+                        <span>Total</span>
+                        <span>{{ inv.total | currency: 'INR' : 'symbol' : '1.0-0' }}</span>
+                      </div>
+                    </div>
+                  </div>
+                }
+              </article>
+            }
+          </div>
+        }
+      </section>
+    }
+  }
+
+  @if (deleteConfirmTarget(); as target) {
+    <div class="delete-overlay" (click)="cancelDeleteConfirm()" role="presentation">
+      <div
+        class="delete-dialog"
+        (click)="$event.stopPropagation()"
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="delete-dialog-title"
+        aria-describedby="delete-dialog-desc"
+      >
+        <h2 id="delete-dialog-title" class="delete-dialog__title">Delete invoice?</h2>
+        <p id="delete-dialog-desc" class="delete-dialog__desc">
+          <strong>{{ target.id }}</strong> will be removed. You’ll have
+          <strong>5 seconds</strong> to restore it before it is deleted permanently.
+        </p>
+        <p class="delete-dialog__meta">
+          Total:
+          {{ target.total | currency: 'INR' : 'symbol' : '1.0-0' }}
+          · {{ target.lines.length }}
+          {{ target.lines.length === 1 ? 'line' : 'lines' }}
+        </p>
+        <div class="delete-dialog__actions">
+          <button type="button" class="btn-dialog-cancel" (click)="cancelDeleteConfirm()">
+            Cancel
+          </button>
+          <button type="button" class="btn-dialog-delete" (click)="confirmDelete()">
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (pendingDeleteList().length > 0) {
+    <div class="undo-toast-stack" aria-live="polite">
+      @for (pending of pendingDeleteList(); track pending.invoice.id) {
+        <div class="undo-toast">
+          <span class="undo-toast__text">
+            <strong>{{ pending.invoice.id }}</strong> removed.
+            @if (pending.secondsLeft > 0) {
+              Restore within {{ pending.secondsLeft }}s
+            } @else {
+              Deleting…
+            }
+          </span>
+          @if (pending.secondsLeft > 0) {
+            <button
+              type="button"
+              class="undo-toast__btn"
+              (click)="undoDelete(pending.invoice.id)"
+            >
+              Undo
+            </button>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>

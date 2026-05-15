@@ -1,0 +1,15 @@
+.DS_Store
+
+# Angular (BillingApplication/)
+BillingApplication/node_modules/
+BillingApplication/dist/
+BillingApplication/.angular/
+BillingApplication/coverage/
+
+# Spring Boot (BillingSpringBoot/)
+BillingSpringBoot/target/
+BillingSpringBoot/.idea/
+BillingSpringBoot/*.iml
+
+# Local DB credentials (copy from application.properties.example)
+BillingSpringBoot/src/main/resources/application-local.properties

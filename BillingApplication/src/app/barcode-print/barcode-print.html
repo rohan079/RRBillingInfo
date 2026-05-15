@@ -1,0 +1,118 @@
+<div class="barcode-print-page">
+  <header class="bp-head">
+    <h1 class="bp-title">Barcode print</h1>
+    <p class="bp-sub">
+      Select products from inventory, preview labels, then print via your browser or send ZPL to a
+      network printer (Zebra/TSC, port 9100). The server must reach the printer on your LAN.
+    </p>
+  </header>
+
+  @if (error()) {
+    <p class="bp-banner bp-banner--error" role="alert">{{ error() }}</p>
+  }
+  @if (success()) {
+    <p class="bp-banner bp-banner--ok" role="status">{{ success() }}</p>
+  }
+
+  <section class="card">
+    <h2 class="card-title">Printer (network)</h2>
+    <div class="form-row">
+      <label class="field">
+        <span class="field-label">Printer IP / host</span>
+        <input type="text" class="field-input" [(ngModel)]="printerHost" placeholder="192.168.1.50" />
+      </label>
+      <label class="field field--narrow">
+        <span class="field-label">Port</span>
+        <input type="number" class="field-input" [(ngModel)]="printerPort" min="1" max="65535" />
+      </label>
+      <label class="field field--narrow">
+        <span class="field-label">Copies each</span>
+        <input type="number" class="field-input" [(ngModel)]="copiesPerBarcode" min="1" max="99" />
+      </label>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-head-row">
+      <h2 class="card-title">Select barcodes</h2>
+      <div class="btn-row">
+        <button type="button" class="btn-ghost" (click)="selectAll()">Select all</button>
+        <button type="button" class="btn-ghost" (click)="clearSelection()">Clear</button>
+        <button type="button" class="btn-ghost" (click)="loadInventory()" [disabled]="loading()">
+          Refresh
+        </button>
+      </div>
+    </div>
+
+    <div class="manual-row">
+      <input
+        type="text"
+        class="field-input"
+        [(ngModel)]="manualBarcode"
+        placeholder="Type barcode to add"
+        (keyup.enter)="addManualToSelection()"
+      />
+      <button type="button" class="btn-secondary" (click)="addManualToSelection()">Add</button>
+    </div>
+
+    @if (loading()) {
+      <p class="muted">Loading inventory…</p>
+    } @else if (inventory().length === 0) {
+      <p class="muted">No inventory items. Add products first.</p>
+    } @else {
+      <div class="pick-list">
+        @for (item of inventory(); track item.barcode) {
+          <label class="pick-item" [class.pick-item--on]="isSelected(item.barcode)">
+            <input
+              type="checkbox"
+              [checked]="isSelected(item.barcode)"
+              (change)="toggleSelect(item.barcode)"
+            />
+            <span class="pick-bc">{{ item.barcode }}</span>
+            @if (item.marginPrice != null) {
+              <span class="pick-price">{{
+                item.marginPrice | currency: 'INR' : 'symbol-narrow' : '1.0-0'
+              }}</span>
+            }
+          </label>
+        }
+      </div>
+    }
+
+    <p class="selection-hint">{{ selected().size }} selected</p>
+
+    <div class="action-row">
+      <button type="button" class="btn-primary" (click)="generatePreview()" [disabled]="busy()">
+        Generate preview
+      </button>
+      <button
+        type="button"
+        class="btn-secondary"
+        (click)="printBrowser()"
+        [disabled]="previewLabels().length === 0"
+      >
+        Print (browser)
+      </button>
+      <button type="button" class="btn-network" (click)="sendToNetworkPrinter()" [disabled]="busy()">
+        {{ busy() ? 'Sending…' : 'Send to network printer' }}
+      </button>
+    </div>
+  </section>
+
+  @if (previewLabels().length > 0) {
+    <section class="card">
+      <h2 class="card-title">Preview ({{ previewLabels().length }} labels)</h2>
+      <div class="preview-grid">
+        @for (label of previewLabels(); track $index) {
+          <div class="preview-label">
+            <img [src]="label.imageDataUrl" [alt]="label.barcode" />
+            <p class="preview-bc">{{ label.barcode }}</p>
+            @if (label.caption) {
+              <p class="preview-cap">{{ label.caption }}</p>
+            }
+          </div>
+        }
+      </div>
+    </section>
+  }
+</div>

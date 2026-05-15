@@ -1,0 +1,424 @@
+:host {
+  display: block;
+  min-height: 100%;
+  background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+}
+
+.invoices-page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1.25rem 1rem 2.5rem;
+}
+
+.invoices-head {
+  margin-bottom: 1.25rem;
+}
+
+.invoices-title {
+  margin: 0 0 0.25rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.invoices-sub {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #64748b;
+}
+
+.invoices-status {
+  margin: 0 0 0.75rem;
+  font-size: 0.9rem;
+  color: #475569;
+}
+
+.invoices-status--error {
+  color: #b91c1c;
+  padding: 0.5rem 0.75rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+}
+
+.invoices-empty {
+  padding: 2rem 1rem;
+  text-align: center;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+}
+
+.invoices-empty-hint {
+  margin: 0.5rem 0 0;
+  font-size: 0.9rem;
+  color: #64748b;
+}
+
+.week-block {
+  margin-bottom: 1.75rem;
+}
+
+.week-title {
+  margin: 0 0 0.75rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1e293b;
+  padding-bottom: 0.35rem;
+  border-bottom: 2px solid #c7d2fe;
+}
+
+.day-block {
+  margin: 0 0 1rem 1rem;
+}
+
+.day-title {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.invoice-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 0;
+  margin-bottom: 0.65rem;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 6%);
+  overflow: hidden;
+}
+
+.invoice-header-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  min-height: 3rem;
+}
+
+.invoice-expand-btn {
+  flex-shrink: 0;
+  width: 2.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-right: 1px solid #f1f5f9;
+  background: #f8fafc;
+  cursor: pointer;
+  color: #475569;
+  padding: 0;
+}
+
+.invoice-expand-btn:hover {
+  background: #f1f5f9;
+  color: #1e293b;
+}
+
+.invoice-expand-btn:focus-visible {
+  outline: 2px solid #6366f1;
+  outline-offset: -2px;
+  z-index: 1;
+}
+
+.chevron {
+  width: 1.35rem;
+  height: 1.35rem;
+  transition: transform 0.2s ease;
+  transform: rotate(0deg);
+}
+
+.chevron--open {
+  transform: rotate(90deg);
+}
+
+.invoice-header-main {
+  flex: 1;
+  min-width: 0;
+  padding: 0.55rem 0.65rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.2rem;
+}
+
+.invoice-header-line1,
+.invoice-header-line2 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.75rem;
+}
+
+.invoice-header-line2 {
+  justify-content: space-between;
+}
+
+.invoice-meta {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.invoice-total-inline {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #0f172a;
+}
+
+.btn-remove-invoice {
+  flex-shrink: 0;
+  align-self: center;
+  margin: 0 0.65rem 0 0;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #b91c1c;
+  background: transparent;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  padding: 0.35rem 0.55rem;
+  cursor: pointer;
+}
+
+.btn-remove-invoice:hover {
+  background: #fef2f2;
+  border-color: #f87171;
+}
+
+.btn-remove-invoice:focus-visible {
+  outline: 2px solid #ef4444;
+  outline-offset: 2px;
+}
+
+.invoice-panel {
+  padding: 0 0.75rem 0.85rem 2.75rem;
+  border-top: 1px solid #f1f5f9;
+  background: #fafafa;
+}
+
+@media (max-width: 480px) {
+  .invoice-panel {
+    padding-left: 0.75rem;
+  }
+}
+
+.invoice-id {
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #4338ca;
+}
+
+.invoice-time {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.invoice-lines {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+}
+
+.invoice-lines th,
+.invoice-lines td {
+  padding: 0.35rem 0.25rem;
+  text-align: left;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.invoice-lines th {
+  color: #64748b;
+  font-weight: 600;
+}
+
+.invoice-lines .num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.line-label {
+  display: block;
+  font-weight: 500;
+  color: #0f172a;
+}
+
+.line-barcode {
+  display: block;
+  font-size: 0.72rem;
+  color: #94a3b8;
+}
+
+.invoice-summary {
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.5rem 0;
+  font-size: 0.85rem;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.sum-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.15rem 0;
+  color: #475569;
+}
+
+.sum-row.discount {
+  color: #b45309;
+}
+
+.sum-row.total {
+  margin-top: 0.25rem;
+  padding-top: 0.35rem;
+  border-top: 1px dashed #e2e8f0;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #0f172a;
+}
+
+/* Delete confirmation dialog */
+.delete-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgb(15 23 42 / 45%);
+}
+
+.delete-dialog {
+  width: 100%;
+  max-width: 420px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.25rem 1.35rem 1.15rem;
+  box-shadow: 0 20px 50px rgb(15 23 42 / 25%);
+}
+
+.delete-dialog__title {
+  margin: 0 0 0.5rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.delete-dialog__desc {
+  margin: 0 0 0.65rem;
+  font-size: 0.9rem;
+  color: #475569;
+  line-height: 1.45;
+}
+
+.delete-dialog__meta {
+  margin: 0 0 1rem;
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.delete-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.btn-dialog-cancel {
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #475569;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.45rem 0.85rem;
+  cursor: pointer;
+}
+
+.btn-dialog-cancel:hover {
+  background: #e2e8f0;
+}
+
+.btn-dialog-delete {
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #fff;
+  background: #dc2626;
+  border: none;
+  border-radius: 8px;
+  padding: 0.45rem 0.9rem;
+  cursor: pointer;
+}
+
+.btn-dialog-delete:hover {
+  background: #b91c1c;
+}
+
+/* Undo toast after delete */
+.undo-toast-stack {
+  position: fixed;
+  bottom: 1.25rem;
+  right: 1rem;
+  left: 1rem;
+  z-index: 1050;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+  pointer-events: none;
+}
+
+.undo-toast {
+  pointer-events: auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem 1rem;
+  max-width: 100%;
+  padding: 0.65rem 0.85rem;
+  background: #1e293b;
+  color: #f8fafc;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgb(15 23 42 / 35%);
+  font-size: 0.875rem;
+}
+
+.undo-toast__text {
+  flex: 1;
+  min-width: 0;
+}
+
+.undo-toast__btn {
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #1e293b;
+  background: #fbbf24;
+  border: none;
+  border-radius: 6px;
+  padding: 0.35rem 0.65rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.undo-toast__btn:hover {
+  background: #f59e0b;
+}
+
+@media (min-width: 640px) {
+  .invoices-page {
+    padding: 1.5rem 1.25rem 3rem;
+  }
+
+  .undo-toast-stack {
+    left: auto;
+    max-width: 420px;
+  }
+}

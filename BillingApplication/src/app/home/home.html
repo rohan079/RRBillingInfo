@@ -1,0 +1,319 @@
+<div class="home">
+  <header class="home-header">
+    <div class="home-header__titles">
+      <h1 class="home-title">Home</h1>
+      <p class="home-subtitle">
+        <strong>USB serial</strong> or <strong>Bluetooth LE</strong> (Nordic UART)
+        setup opens in a dialog until connected. <strong>HID wedge</strong> and
+        manual entry stay on this page. Chrome / Edge over HTTPS or localhost.
+      </p>
+    </div>
+  </header>
+
+  <div class="home-layout">
+    <section class="card wedge-card" aria-labelledby="wedge-heading">
+      <h2 id="wedge-heading" class="card-title">Keyboard wedge &amp; manual</h2>
+      <p class="wedge-intro">
+        Focus the field, then scan. Most wedge scanners send
+        <kbd>Enter</kbd> or <kbd>Tab</kbd> after the barcode.
+      </p>
+      <label class="wedge-label" for="wedge-input">Scan target</label>
+      <input
+        id="wedge-input"
+        type="text"
+        class="wedge-input"
+        [(ngModel)]="wedgeBuffer"
+        (keydown)="onWedgeKeydown($event)"
+        autocomplete="off"
+        autocapitalize="off"
+        spellcheck="false"
+        placeholder="Focus here for keyboard-wedge scanners"
+      />
+      <div class="manual-row">
+        <label class="manual-label" for="manual-bc">Manual barcode</label>
+        <div class="manual-inputs">
+          <input
+            id="manual-bc"
+            type="text"
+            class="text-input"
+            [(ngModel)]="manualBarcode"
+            placeholder="Type or paste if needed"
+            (keyup.enter)="addManualBarcode()"
+          />
+          <button type="button" class="btn-secondary" (click)="addManualBarcode()">
+            Add to bill
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card bill-card" aria-labelledby="bill-heading">
+      <div class="bill-card__head">
+        <h2 id="bill-heading" class="card-title">Bill</h2>
+        <div class="bill-card__actions">
+          <button
+            type="button"
+            class="btn-ghost"
+            (click)="clearBill()"
+            [disabled]="billLines().length === 0"
+          >
+            Clear
+          </button>
+          <button
+            type="button"
+            class="btn-finish"
+            (click)="finishBill()"
+            [disabled]="billLines().length === 0 || finishBusy()"
+          >
+            {{ finishBusy() ? 'Saving…' : 'Finish' }}
+          </button>
+        </div>
+      </div>
+
+      @if (finishError()) {
+        <p class="bill-api-error" role="alert">{{ finishError() }}</p>
+      }
+
+      @if (billLines().length === 0) {
+        <p class="empty-bill">No lines yet — connect USB/BT, use wedge, or add manually.</p>
+      } @else {
+        <div class="table-scroll">
+          <table class="bill-table">
+            <thead>
+              <tr>
+                <th scope="col">Item</th>
+                <th scope="col">Barcode</th>
+                <th scope="col" class="num">Qty</th>
+                <th scope="col" class="num">Price</th>
+                <th scope="col" class="num">Line</th>
+                <th scope="col"><span class="sr-only">Actions</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (line of billLines(); track line.id) {
+                <tr>
+                  <td>{{ line.label }}</td>
+                  <td class="mono">{{ line.barcode }}</td>
+                  <td class="num">
+                    <span class="qty-controls">
+                      <button
+                        type="button"
+                        class="qty-btn"
+                        (click)="decrementQty(line.id)"
+                        aria-label="Decrease quantity"
+                      >
+                        −
+                      </button>
+                      {{ line.qty }}
+                      <button
+                        type="button"
+                        class="qty-btn"
+                        (click)="incrementQty(line.id)"
+                        aria-label="Increase quantity"
+                      >
+                        +
+                      </button>
+                    </span>
+                  </td>
+                  <td class="num">
+                    {{
+                      line.unitPrice
+                        | currency : 'INR' : 'symbol-narrow' : '1.0-0' : 'en-IN'
+                    }}
+                  </td>
+                  <td class="num">
+                    {{
+                      lineTotal(line)
+                        | currency : 'INR' : 'symbol-narrow' : '1.0-0' : 'en-IN'
+                    }}
+                  </td>
+                  <td>
+                    <button
+                      type="button"
+                      class="btn-ghost btn-ghost--sm"
+                      (click)="removeLine(line.id)"
+                    >
+                      Remove
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <div class="discount-row">
+          <label class="discount-label" for="bill-discount-pct"
+            >Overall bill discount (%)</label
+          >
+          <input
+            id="bill-discount-pct"
+            type="number"
+            class="discount-input"
+            min="0"
+            max="100"
+            step="1"
+            [ngModel]="billDiscountPercent()"
+            (ngModelChange)="setBillDiscountPercent($event)"
+          />
+        </div>
+        <footer class="bill-summary">
+          <div class="bill-summary__row">
+            <span class="bill-summary__label">Subtotal</span>
+            <span class="bill-summary__value">{{
+              billSubtotal() | currency : 'INR' : 'symbol-narrow' : '1.0-0' : 'en-IN'
+            }}</span>
+          </div>
+          @if (billDiscountPercent() > 0 && billDiscountAmount() > 0) {
+            <div class="bill-summary__row bill-summary__row--discount">
+              <span class="bill-summary__label"
+                >Discount ({{ billDiscountPercent() }}%)</span
+              >
+              <span class="bill-summary__value"
+                >−{{
+                  billDiscountAmount()
+                    | currency : 'INR' : 'symbol-narrow' : '1.0-0' : 'en-IN'
+                }}</span
+              >
+            </div>
+          }
+          <div class="bill-summary__row bill-summary__row--grand">
+            <span class="bill-summary__label">Total</span>
+            <span class="bill-summary__value bill-summary__value--grand">{{
+              billGrandTotal() | currency : 'INR' : 'symbol-narrow' : '1.0-0' : 'en-IN'
+            }}</span>
+          </div>
+        </footer>
+      }
+    </section>
+  </div>
+
+  @if (showScannerTransportModal()) {
+    <div
+      class="scanner-overlay"
+      (click)="dismissScannerTransportModal()"
+      role="presentation"
+    >
+      <div
+        class="scanner-dialog"
+        (click)="$event.stopPropagation()"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="scanner-modal-title"
+      >
+        <div class="scanner-dialog__head">
+          <h2 id="scanner-modal-title" class="scanner-dialog__title">
+            Scanner (USB / Bluetooth)
+          </h2>
+          <button
+            type="button"
+            class="modal-dismiss"
+            (click)="dismissScannerTransportModal()"
+            aria-label="Close dialog"
+          >
+            ×
+          </button>
+        </div>
+        <p class="conn-hint">
+          Connect here for serial-over-USB (Web Serial) or BLE Nordic UART.
+          This dialog hides automatically while a link is active.
+        </p>
+
+        <div class="conn-row" role="group" aria-label="Scanner connection">
+          <button
+            type="button"
+            class="conn-btn"
+            (click)="toggleUsbSerial()"
+            [disabled]="!serialSupported()"
+            [class.conn-btn--on]="usbSerialConnected()"
+            [attr.aria-pressed]="usbSerialConnected()"
+            [title]="
+              serialSupported()
+                ? (usbSerialConnected()
+                    ? 'USB serial connected — click to disconnect'
+                    : 'Connect USB serial barcode scanner')
+                : 'Web Serial not supported in this browser'
+            "
+          >
+            <svg
+              class="link-icon"
+              [class.link-icon--on]="usbSerialConnected()"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path
+                fill="currentColor"
+                d="M15 7h3v10h-3v2H9v-2H6V7h3V5h6v2zm-1-2H10v12h4V5zm4 14H7v2h11v-2zm-8 2H5v2h5v-2z"
+              />
+            </svg>
+            <span class="conn-btn__text">USB</span>
+          </button>
+
+          <button
+            type="button"
+            class="conn-btn"
+            (click)="toggleBleScanner()"
+            [disabled]="!bluetoothSupported()"
+            [class.conn-btn--on]="bluetoothScannerConnected()"
+            [attr.aria-pressed]="bluetoothScannerConnected()"
+            [title]="
+              bluetoothSupported()
+                ? (bluetoothScannerConnected()
+                    ? 'Bluetooth scanner connected — click to disconnect'
+                    : 'Pair Bluetooth LE scanner (Nordic UART)')
+                : 'Web Bluetooth not supported in this browser'
+            "
+          >
+            <svg
+              class="link-icon"
+              [class.link-icon--on]="bluetoothScannerConnected()"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path
+                fill="currentColor"
+                d="M17.71 7.71 12 2h-1v7.59L6.41 3 5 4.41 10.59 10 5 15.59 6.41 17 11 12.41V20h1l5.71-5.71-4.3-4.29 4.3-4.29zM13 5.83l1.88 1.88L13 9.59V5.83zm1.88 10.46L13 18.17v-3.76l1.88 1.88z"
+              />
+            </svg>
+            <span class="conn-btn__text">Bluetooth</span>
+          </button>
+
+          <label class="baud-wrap" for="baud-select">
+            <span class="baud-label">Baud</span>
+            <select
+              id="baud-select"
+              class="baud-select"
+              [ngModel]="serialBaud()"
+              (ngModelChange)="serialBaud.set($event)"
+              [disabled]="usbSerialConnected()"
+            >
+              <option [ngValue]="9600">9600</option>
+              <option [ngValue]="57600">57600</option>
+              <option [ngValue]="115200">115200</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="modal-actions">
+          <button
+            type="button"
+            class="btn-secondary btn-secondary--block"
+            (click)="dismissScannerTransportModal()"
+          >
+            Continue billing (wedge / manual only)
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (showScannerTransportFab()) {
+    <button
+      type="button"
+      class="scanner-fab"
+      (click)="openScannerTransportModal()"
+      title="Open USB / Bluetooth scanner setup"
+    >
+      Scanner setup
+    </button>
+  }
+</div>

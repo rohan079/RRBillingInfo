@@ -1,0 +1,169 @@
+<div class="products-page">
+  <header class="products-head">
+    <h1 class="products-title">Products</h1>
+    <p class="products-sub">Inventory from the API — add by barcode or generate many barcodes at once.</p>
+  </header>
+
+  @if (error()) {
+    <p class="products-banner products-banner--error" role="alert">
+      {{ error() }}
+      <button type="button" class="banner-dismiss" (click)="dismissMessages()">Dismiss</button>
+    </p>
+  }
+  @if (success()) {
+    <p class="products-banner products-banner--ok" role="status">
+      {{ success() }}
+      <button type="button" class="banner-dismiss" (click)="dismissMessages()">Dismiss</button>
+    </p>
+  }
+
+  <section class="card products-card" aria-labelledby="bulk-heading">
+    <h2 id="bulk-heading" class="card-title">Generate barcodes</h2>
+    <p class="card-hint">
+      Enter how many products you want (e.g. <strong>50</strong>). Each gets a unique barcode like
+      <code>AUTO-1730000000000-00001</code> using your prefix and a batch id.
+    </p>
+    <div class="form-grid">
+      <label class="field">
+        <span class="field-label">Count</span>
+        <input type="number" class="field-input" min="1" max="10000" [(ngModel)]="bulkCount" />
+      </label>
+      <label class="field">
+        <span class="field-label">Prefix</span>
+        <input
+          type="text"
+          class="field-input"
+          [(ngModel)]="bulkPrefix"
+          maxlength="40"
+          placeholder="AUTO"
+        />
+      </label>
+      <label class="field">
+        <span class="field-label">Quantity each</span>
+        <input type="number" class="field-input" min="0" [(ngModel)]="bulkQty" />
+      </label>
+      <label class="field">
+        <span class="field-label">Actual price (₹)</span>
+        <input type="number" class="field-input" min="0" step="0.01" [(ngModel)]="bulkActual" />
+      </label>
+      <label class="field">
+        <span class="field-label">Margin price (₹)</span>
+        <input type="number" class="field-input" min="0" step="0.01" [(ngModel)]="bulkMargin" />
+      </label>
+    </div>
+    <button
+      type="button"
+      class="btn-primary"
+      (click)="generateBarcodes()"
+      [disabled]="bulkBusy()"
+    >
+      {{ bulkBusy() ? 'Generating…' : 'Generate & save' }}
+    </button>
+  </section>
+
+  <section class="card products-card" aria-labelledby="remove-bulk-heading">
+    <h2 id="remove-bulk-heading" class="card-title">Remove barcodes by count</h2>
+    <p class="card-hint">
+      Enter how many rows to remove (e.g. <strong>40</strong> after creating 50). Uses the same
+      <strong>prefix</strong> as generate (default <code>AUTO</code>). Without a batch id, the
+      <strong>newest</strong> matching rows are removed first. Optional <strong>batch id</strong> is
+      the middle number in <code>AUTO-1730000000000-00001</code> so only that batch is touched; then
+      highest suffix numbers are removed first.
+    </p>
+    <div class="form-grid">
+      <label class="field">
+        <span class="field-label">How many to remove</span>
+        <input type="number" class="field-input" min="1" max="10000" [(ngModel)]="removeCount" />
+      </label>
+      <label class="field">
+        <span class="field-label">Prefix</span>
+        <input
+          type="text"
+          class="field-input"
+          [(ngModel)]="removePrefix"
+          maxlength="40"
+          placeholder="AUTO"
+        />
+      </label>
+      <label class="field field--wide">
+        <span class="field-label">Batch id (optional)</span>
+        <input
+          type="text"
+          class="field-input"
+          [(ngModel)]="removeBatchId"
+          placeholder="e.g. 1730000000000 from AUTO-1730000000000-00001"
+        />
+      </label>
+    </div>
+    <button
+      type="button"
+      class="btn-remove-bulk"
+      (click)="removeBarcodes()"
+      [disabled]="removeBusy()"
+    >
+      {{ removeBusy() ? 'Removing…' : 'Remove from inventory' }}
+    </button>
+  </section>
+
+  <section class="card products-card" aria-labelledby="manual-heading">
+    <h2 id="manual-heading" class="card-title">Add one product</h2>
+    <div class="form-grid form-grid--manual">
+      <label class="field field--wide">
+        <span class="field-label">Barcode</span>
+        <input type="text" class="field-input" [(ngModel)]="newBarcode" placeholder="Scan or type" />
+      </label>
+      <label class="field">
+        <span class="field-label">Quantity</span>
+        <input type="number" class="field-input" min="0" [(ngModel)]="newQty" />
+      </label>
+      <label class="field">
+        <span class="field-label">Actual (₹)</span>
+        <input type="number" class="field-input" min="0" step="0.01" [(ngModel)]="newActual" />
+      </label>
+      <label class="field">
+        <span class="field-label">Margin (₹)</span>
+        <input type="number" class="field-input" min="0" step="0.01" [(ngModel)]="newMargin" />
+      </label>
+    </div>
+    <button type="button" class="btn-secondary" (click)="addProduct()">Add product</button>
+  </section>
+
+  <section class="card products-card" aria-labelledby="list-heading">
+    <div class="list-head">
+      <h2 id="list-heading" class="card-title">Inventory list</h2>
+      <button type="button" class="btn-ghost" (click)="refresh()" [disabled]="loading()">Refresh</button>
+    </div>
+    @if (loading()) {
+      <p class="muted">Loading…</p>
+    } @else if (items().length === 0) {
+      <p class="muted">No products yet. Generate barcodes or add one manually.</p>
+    } @else {
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Barcode</th>
+              <th class="num">Qty</th>
+              <th class="num">Actual</th>
+              <th class="num">Margin</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of items(); track row.id) {
+              <tr>
+                <td class="mono">{{ row.barcode }}</td>
+                <td class="num">{{ row.quantity }}</td>
+                <td class="num">{{ row.actualPrice | currency: 'INR' : 'symbol-narrow' : '1.0-0' }}</td>
+                <td class="num">{{ row.marginPrice | currency: 'INR' : 'symbol-narrow' : '1.0-0' }}</td>
+                <td>
+                  <button type="button" class="link-danger" (click)="removeProduct(row.id)">Remove</button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</div>

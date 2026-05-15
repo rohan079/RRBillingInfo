@@ -1,0 +1,2 @@
+# Copy to application-local.properties (gitignored) for local overrides.
+# spring.datasource.password=your-postgres-password

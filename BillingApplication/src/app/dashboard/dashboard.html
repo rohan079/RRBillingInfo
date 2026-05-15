@@ -1,0 +1,384 @@
+<div class="dashboard">
+  <header class="dashboard-header">
+    <h1 class="dashboard-title">Dashboard</h1>
+    <p class="dashboard-subtitle">
+      Sales and profit from your billing API (Asia/Kolkata reporting).
+    </p>
+    @if (dashboardError()) {
+      <p class="dashboard-banner-error" role="alert">{{ dashboardError() }}</p>
+    }
+  </header>
+
+  <div class="tabs" role="tablist" aria-label="Sales and profit period">
+    <button
+      type="button"
+      class="tab"
+      role="tab"
+      [class.tab--active]="activeTab() === '1m'"
+      [attr.aria-selected]="activeTab() === '1m'"
+      id="tab-1m"
+      (click)="selectTab('1m')"
+    >
+      1 month
+    </button>
+    <button
+      type="button"
+      class="tab"
+      role="tab"
+      [class.tab--active]="activeTab() === '3m'"
+      [attr.aria-selected]="activeTab() === '3m'"
+      id="tab-3m"
+      (click)="selectTab('3m')"
+    >
+      3 months
+    </button>
+    <button
+      type="button"
+      class="tab"
+      role="tab"
+      [class.tab--active]="activeTab() === '6m'"
+      [attr.aria-selected]="activeTab() === '6m'"
+      id="tab-6m"
+      (click)="selectTab('6m')"
+    >
+      6 months
+    </button>
+    <button
+      type="button"
+      class="tab"
+      role="tab"
+      [class.tab--active]="activeTab() === 'today'"
+      [attr.aria-selected]="activeTab() === 'today'"
+      id="tab-today"
+      (click)="selectTab('today')"
+    >
+      Today
+    </button>
+    <button
+      type="button"
+      class="tab"
+      role="tab"
+      [class.tab--active]="activeTab() === 'custom'"
+      [attr.aria-selected]="activeTab() === 'custom'"
+      id="tab-custom"
+      (click)="selectTab('custom')"
+    >
+      Custom
+    </button>
+  </div>
+
+  @if (activeTab() === '1m') {
+    <div class="tab-panel" role="tabpanel" aria-labelledby="tab-1m">
+      <h2 class="section-title">Previous month</h2>
+      <p class="section-hint">{{ stats().lastMonth.periodLabel }}</p>
+      <div class="kpi-grid">
+        <article class="kpi-card">
+          <h3 class="kpi-label">Sales</h3>
+          <p class="kpi-value">
+            {{
+              stats().lastMonth.sales
+                | currency : 'INR' : 'symbol-narrow' : '1.0-0' : 'en-IN'
+            }}
+          </p>
+        </article>
+        <article class="kpi-card kpi-card--accent">
+          <h3 class="kpi-label">Profit</h3>
+          <p class="kpi-value">
+            {{
+              stats().lastMonth.profit
+                | currency : 'INR' : 'symbol-narrow' : '1.0-0' : 'en-IN'
+            }}
+          </p>
+        </article>
+      </div>
+      <div class="panel panel--stack">
+        <div
+          class="chart-shell chart-shell--compact"
+          role="img"
+          aria-label="Sales and profit chart for previous month"
+        >
+          <canvas #trendChart></canvas>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th scope="col">Period</th>
+                <th scope="col" class="num">Sales</th>
+                <th scope="col" class="num">Profit</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>{{ stats().lastMonth.periodLabel }}</td>
+                <td class="num">
+                  {{
+                    stats().lastMonth.sales
+                      | currency : 'INR' : 'symbol-narrow' : '1.0-0' : 'en-IN'
+                  }}
+                </td>
+                <td class="num">
+                  {{
+                    stats().lastMonth.profit
+                      | currency : 'INR' : 'symbol-narrow' : '1.0-0' : 'en-IN'
+                  }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  } @else if (activeTab() === 'today') {
+    <div class="tab-panel" role="tabpanel" aria-labelledby="tab-today">
+      <h2 class="section-title">Today — sales</h2>
+      <p class="section-hint">
+        Figures for <strong>{{ todaySnapshot().dateIso }}</strong> —
+        {{ todaySnapshot().dateLabel }}. Refreshes when you open this tab.
+      </p>
+      <div class="kpi-grid">
+        <article class="kpi-card">
+          <h3 class="kpi-label">Sales</h3>
+          <p class="kpi-value">
+            {{
+              todaySnapshot().sales
+                | currency : 'INR' : 'symbol-narrow' : '1.0-0' : 'en-IN'
+            }}
+          </p>
+        </article>
+        <article class="kpi-card kpi-card--accent">
+          <h3 class="kpi-label">Profit</h3>
+          <p class="kpi-value">
+            {{
+              todaySnapshot().profit
+                | currency : 'INR' : 'symbol-narrow' : '1.0-0' : 'en-IN'
+            }}
+          </p>
+        </article>
+      </div>
+      <div class="panel panel--stack">
+        <div
+          class="chart-shell chart-shell--compact"
+          role="img"
+          aria-label="Today sales versus profit chart"
+        >
+          <canvas #trendChart></canvas>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th scope="col">Date</th>
+                <th scope="col" class="num">Sales</th>
+                <th scope="col" class="num">Profit</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>{{ todaySnapshot().dateLabel }}</td>
+                <td class="num">
+                  {{
+                    todaySnapshot().sales
+                      | currency : 'INR' : 'symbol-narrow' : '1.0-0' : 'en-IN'
+                  }}
+                </td>
+                <td class="num">
+                  {{
+                    todaySnapshot().profit
+                      | currency : 'INR' : 'symbol-narrow' : '1.0-0' : 'en-IN'
+                  }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  } @else if (activeTab() === 'custom') {
+    <div class="tab-panel" role="tabpanel" aria-labelledby="tab-custom">
+      <h2 class="section-title">Custom range</h2>
+      <p class="section-hint">
+        Pick a start and end date, then Apply. Values are monthly totals from the API.
+      </p>
+      <div class="custom-range">
+        <label class="date-field">
+          <span class="date-field__label">From</span>
+          <input
+            type="date"
+            class="date-input"
+            [value]="customFrom()"
+            (input)="onCustomFromInput($any($event.target).value)"
+          />
+        </label>
+        <label class="date-field">
+          <span class="date-field__label">To</span>
+          <input
+            type="date"
+            class="date-input"
+            [value]="customTo()"
+            (input)="onCustomToInput($any($event.target).value)"
+          />
+        </label>
+        <button type="button" class="btn-apply" (click)="applyCustomRange()">
+          Apply range
+        </button>
+      </div>
+      @if (customError()) {
+        <p class="field-error" role="alert">{{ customError() }}</p>
+      }
+      @if (customPoints().length === 0) {
+        <p class="empty-hint">No months in this range. Adjust dates and apply.</p>
+      } @else {
+        <div class="panel panel--stack">
+          <div
+            class="chart-shell"
+            [class.chart-shell--tall]="customPoints().length >= 5"
+            role="img"
+            aria-label="Sales and profit chart for custom date range"
+          >
+            <canvas #trendChart></canvas>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th scope="col">Month</th>
+                  <th scope="col" class="num">Sales</th>
+                  <th scope="col" class="num">Profit</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of customPoints(); track row.label) {
+                  <tr>
+                    <td>{{ row.label }}</td>
+                    <td class="num">
+                      {{
+                        row.sales
+                          | currency
+                            : 'INR'
+                            : 'symbol-narrow'
+                            : '1.0-0'
+                            : 'en-IN'
+                      }}
+                    </td>
+                    <td class="num">
+                      {{
+                        row.profit
+                          | currency
+                            : 'INR'
+                            : 'symbol-narrow'
+                            : '1.0-0'
+                            : 'en-IN'
+                      }}
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
+    </div>
+  } @else {
+    <div
+      class="tab-panel"
+      role="tabpanel"
+      [attr.aria-labelledby]="activeTab() === '3m' ? 'tab-3m' : 'tab-6m'"
+    >
+      <h2 class="section-title visually-hidden">
+        {{ activeTab() === '3m' ? 'Last 3 months' : 'Last 6 months' }}
+      </h2>
+      <div class="panel panel--stack">
+        <div
+          class="chart-shell"
+          [class.chart-shell--tall]="activeTab() === '6m'"
+          role="img"
+          [attr.aria-label]="
+            activeTab() === '3m'
+              ? 'Sales and profit chart, last 3 months'
+              : 'Sales and profit chart, last 6 months'
+          "
+        >
+          <canvas #trendChart></canvas>
+        </div>
+        <div class="table-wrap">
+          @if (activeTab() === '3m') {
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th scope="col">Month</th>
+                  <th scope="col" class="num">Sales</th>
+                  <th scope="col" class="num">Profit</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of stats().last3Months; track row.label) {
+                  <tr>
+                    <td>{{ row.label }}</td>
+                    <td class="num">
+                      {{
+                        row.sales
+                          | currency
+                            : 'INR'
+                            : 'symbol-narrow'
+                            : '1.0-0'
+                            : 'en-IN'
+                      }}
+                    </td>
+                    <td class="num">
+                      {{
+                        row.profit
+                          | currency
+                            : 'INR'
+                            : 'symbol-narrow'
+                            : '1.0-0'
+                            : 'en-IN'
+                      }}
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          } @else {
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th scope="col">Month</th>
+                  <th scope="col" class="num">Sales</th>
+                  <th scope="col" class="num">Profit</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of stats().last6Months; track row.label) {
+                  <tr>
+                    <td>{{ row.label }}</td>
+                    <td class="num">
+                      {{
+                        row.sales
+                          | currency
+                            : 'INR'
+                            : 'symbol-narrow'
+                            : '1.0-0'
+                            : 'en-IN'
+                      }}
+                    </td>
+                    <td class="num">
+                      {{
+                        row.profit
+                          | currency
+                            : 'INR'
+                            : 'symbol-narrow'
+                            : '1.0-0'
+                            : 'en-IN'
+                      }}
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
+        </div>
+      </div>
+    </div>
+  }
+</div>
