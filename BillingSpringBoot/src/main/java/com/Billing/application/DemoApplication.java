@@ -9,7 +9,6 @@ public class DemoApplication {
 
 	public static void main(String[] args) {
 		SpringApplication application = new SpringApplication(DemoApplication.class);
-		application.addEnvironmentPostProcessors(new RenderDatabaseEnvironmentPostProcessor());
 		application.run(args);
 	}
 
